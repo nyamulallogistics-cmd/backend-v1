@@ -1,0 +1,171 @@
+// Prisma schema for Nyamula Logistics
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  TRANSPORTER
+  CARGO_OWNER
+}
+
+enum ShipmentStatus {
+  PENDING_PICKUP
+  AWAITING_PICKUP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  ACTIVE
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  fullName    String
+  email       String   @unique
+  password    String
+  companyName String
+  phoneNumber String
+  role        Role
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  shipmentsAsOwner     Shipment[] @relation("CargoOwnerShipments")
+  shipmentsAsTransporter Shipment[] @relation("TransporterShipments")
+  quotes               Quote[]
+  bids                 Bid[]
+}
+
+model Shipment {
+  id               String          @id @default(cuid())
+  cargo            String
+  cargoDescription String?
+  fromLocation     String
+  fromAddress      String?
+  toLocation       String
+  toAddress        String?
+  status           ShipmentStatus  @default(PENDING_PICKUP)
+  amount           Float
+  eta              DateTime
+  progress         Int             @default(0)
+  weight           Float
+  distance         Float
+  dimensions       String?
+  pickupDate       DateTime?
+  deliveryDate     DateTime?
+  completedAt      DateTime?
+  
+  // Driver and Vehicle Info
+  driverName       String?
+  driverPhone      String?
+  truckNumber      String?
+  lastUpdate       String?
+  lastUpdateTime   DateTime?
+  
+  // Relations
+  cargoOwnerId     String
+  cargoOwner       User            @relation("CargoOwnerShipments", fields: [cargoOwnerId], references: [id])
+  
+  transporterId    String?
+  transporter      User?           @relation("TransporterShipments", fields: [transporterId], references: [id])
+  
+  quoteId          String?         @unique
+  quote            Quote?          @relation(fields: [quoteId], references: [id])
+  
+  progressHistory  ShipmentProgress[]
+  
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  
+  @@index([cargoOwnerId])
+  @@index([transporterId])
+  @@index([status])
+}
+
+model Quote {
+  id                  String      @id @default(cuid())
+  cargo               String
+  cargoType           String?
+  cargoDescription    String?
+  fromLocation        String
+  fromAddress         String?
+  toLocation          String
+  toAddress           String?
+  weight              Float
+  distance            Float
+  dimensions          String?
+  estimatedValue      Float?
+  insuranceRequired   Boolean     @default(false)
+  specialInstructions String?
+  pickupDate          DateTime?
+  deliveryDate        DateTime?
+  status              QuoteStatus @default(ACTIVE)
+  expiresAt           DateTime
+  
+  // Relations
+  cargoOwnerId        String
+  cargoOwner          User        @relation(fields: [cargoOwnerId], references: [id])
+  
+  bids                Bid[]
+  shipment            Shipment?
+  
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  
+  @@index([cargoOwnerId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model Bid {
+  id            String   @id @default(cuid())
+  amount        Float
+  estimatedDays Int
+  notes         String?
+  isAccepted    Boolean  @default(false)
+  
+  // Relations
+  quoteId       String
+  quote         Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  
+  transporterId String
+  transporter   User     @relation(fields: [transporterId], references: [id])
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([quoteId])
+  @@index([transporterId])
+  @@index([isAccepted])
+}
+
+model ShipmentProgress {
+  id          String   @id @default(cuid())
+  location    String?
+  notes       String?
+  progress    Int      @default(0)
+  status      String?
+  
+  // Relations
+  shipmentId  String
+  shipment    Shipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  
+  @@index([shipmentId])
+  @@index([createdAt])
+}
+
+

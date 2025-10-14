@@ -1,0 +1,79 @@
+### API Test File for Nyamula Logistics Auth Module
+### Use with REST Client extension in VS Code
+
+@baseUrl = http://localhost:3000/api
+@token = your_token_here
+
+### 1. Sign Up as Transporter
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{
+  "fullName": "John Transporter",
+  "email": "john.transport@example.com",
+  "password": "password123",
+  "companyName": "Fast Wheels Logistics",
+  "phoneNumber": "+1234567890",
+  "role": "transporter"
+}
+
+### 2. Sign Up as Cargo Owner
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{
+  "fullName": "Jane Cargo",
+  "email": "jane.cargo@example.com",
+  "password": "password123",
+  "companyName": "Global Trading Co",
+  "phoneNumber": "+0987654321",
+  "role": "cargo-owner"
+}
+
+### 3. Login as Transporter
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "john.transport@example.com",
+  "password": "password123"
+}
+
+### 4. Login as Cargo Owner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "jane.cargo@example.com",
+  "password": "password123"
+}
+
+### 5. Get Profile (Protected - requires token)
+GET {{baseUrl}}/auth/profile
+Authorization: Bearer {{token}}
+
+### 6. Verify Token (Protected - requires token)
+GET {{baseUrl}}/auth/verify
+Authorization: Bearer {{token}}
+
+### 7. Test Invalid Credentials
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "wrong@example.com",
+  "password": "wrongpassword"
+}
+
+### 8. Test Duplicate Email Registration
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{
+  "fullName": "Duplicate User",
+  "email": "john.transport@example.com",
+  "password": "password123",
+  "companyName": "Test Company",
+  "phoneNumber": "+1111111111",
+  "role": "transporter"
+}
