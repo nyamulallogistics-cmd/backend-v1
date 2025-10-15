@@ -153,7 +153,10 @@ export class ShipmentsService {
       throw new ForbiddenException('Access denied');
     }
 
-    const updateData: any = { ...updateShipmentDto };
+    // Extract fields that belong to ShipmentProgress, not Shipment
+    const { location, notes, ...shipmentFields } = updateShipmentDto;
+    
+    const updateData: any = { ...shipmentFields };
     if (updateShipmentDto.eta) {
       updateData.eta = new Date(updateShipmentDto.eta);
     }
@@ -205,12 +208,12 @@ export class ShipmentsService {
       });
 
       // Create progress history entry if location or notes are provided
-      if (updateShipmentDto.location || updateShipmentDto.notes || updateShipmentDto.progress !== undefined) {
+      if (location || notes || updateShipmentDto.progress !== undefined) {
         await tx.shipmentProgress.create({
           data: {
             shipmentId: id,
-            location: updateShipmentDto.location,
-            notes: updateShipmentDto.notes,
+            location: location,
+            notes: notes,
             progress: updateShipmentDto.progress ?? updatedShipment.progress,
             status: updateShipmentDto.status ?? updatedShipment.status,
           },
