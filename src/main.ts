@@ -4,11 +4,38 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-  // Enable CORS for development (allow all origins)
+
+  // Enable CORS with secure configuration
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',') || [
+    'http://localhost:8080',
+    
+  ];
+
   app.enableCors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Check if origin is in whitelist
+      if (corsOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        // In development, allow any localhost
+        if (
+          process.env.NODE_ENV === 'development' &&
+          origin.includes('localhost')
+        ) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
   // Enable global validation pipe
@@ -25,6 +52,12 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`🚀 Nyamula Logistics Backend running on http://localhost:${port}`);
+
+  const environment = process.env.NODE_ENV || 'development';
+  console.log(
+    `🚀 Nyamula Logistics Backend running on http://localhost:${port}`,
+  );
+  console.log(`📝 Environment: ${environment}`);
+  console.log(`🔐 CORS enabled for: ${corsOrigins.join(', ')}`);
 }
 bootstrap();

@@ -3,6 +3,7 @@ import { IsEmail, IsNotEmpty, IsString, MinLength, IsEnum } from 'class-validato
 export enum UserRole {
   TRANSPORTER = 'transporter',
   CARGO_OWNER = 'cargo-owner',
+  ADMIN = 'admin',
 }
 
 export class SignupDto {

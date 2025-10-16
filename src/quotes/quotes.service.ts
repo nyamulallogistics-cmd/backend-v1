@@ -56,6 +56,35 @@ export class QuotesService {
   }
 
   async findAll(userId: string, userRole: string) {
+    // ADMIN sees ALL quotes
+    if (userRole === 'ADMIN') {
+      return this.prisma.quote.findMany({
+        include: {
+          bids: {
+            include: {
+              transporter: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  companyName: true,
+                  email: true,
+                },
+              },
+            },
+          },
+          cargoOwner: {
+            select: {
+              id: true,
+              fullName: true,
+              companyName: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
     // Cargo owners see their own quotes
     if (userRole === 'CARGO_OWNER') {
       return this.prisma.quote.findMany({
@@ -151,6 +180,11 @@ export class QuotesService {
       throw new NotFoundException('Quote not found');
     }
 
+    // ADMIN can view any quote
+    if (userRole === 'ADMIN') {
+      return quote;
+    }
+
     // Cargo owner can see their own quotes
     if (userRole === 'CARGO_OWNER' && quote.cargoOwnerId !== userId) {
       throw new ForbiddenException('Access denied');
@@ -214,9 +248,17 @@ export class QuotesService {
       throw new BadRequestException('You have already placed a bid on this quote');
     }
 
+    // Calculate platform fee (20%) and final amount
+    const platformFee = createBidDto.amount * 0.20; // 20% deduction
+    const finalAmount = createBidDto.amount - platformFee; // Amount after deduction
+
     return this.prisma.bid.create({
       data: {
-        ...createBidDto,
+        amount: createBidDto.amount,
+        platformFee,
+        finalAmount,
+        estimatedDays: createBidDto.estimatedDays,
+        notes: createBidDto.notes,
         quoteId,
         transporterId: userId,
       },
@@ -291,6 +333,7 @@ export class QuotesService {
       });
 
       // Create shipment from the accepted bid with all quote details
+      // Use finalAmount (after 20% platform fee deduction)
       const shipment = await tx.shipment.create({
         data: {
           cargo: quote.cargo,
@@ -302,7 +345,7 @@ export class QuotesService {
           weight: quote.weight,
           distance: quote.distance,
           dimensions: quote.dimensions,
-          amount: bid.amount,
+          amount: bid.finalAmount || (bid.amount * 0.80), // Use finalAmount (80% of original bid)
           eta: quote.deliveryDate || new Date(Date.now() + bid.estimatedDays * 24 * 60 * 60 * 1000),
           pickupDate: quote.pickupDate,
           cargoOwnerId: quote.cargoOwnerId,

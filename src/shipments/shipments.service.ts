@@ -37,11 +37,19 @@ export class ShipmentsService {
   }
 
   async findAll(userId: string, userRole: string, filterDto?: any) {
-    const where: any = userRole === 'CARGO_OWNER' 
-      ? { cargoOwnerId: userId }
-      : { transporterId: userId };
+    // ADMIN sees ALL shipments (no user filtering)
+    let where: any = {};
+    
+    if (userRole === 'ADMIN') {
+      // Admin can see everything, apply only filters (not user filtering)
+      where = {};
+    } else if (userRole === 'CARGO_OWNER') {
+      where.cargoOwnerId = userId;
+    } else if (userRole === 'TRANSPORTER') {
+      where.transporterId = userId;
+    }
 
-    // Apply filters
+    // Apply filters (for all roles including ADMIN)
     if (filterDto?.status) {
       where.status = filterDto.status;
     }
@@ -131,6 +139,11 @@ export class ShipmentsService {
 
     if (!shipment) {
       throw new NotFoundException('Shipment not found');
+    }
+
+    // ADMIN can view any shipment
+    if (userRole === 'ADMIN') {
+      return shipment;
     }
 
     // Check authorization
@@ -225,15 +238,18 @@ export class ShipmentsService {
   }
 
   async getActiveShipments(userId: string, userRole: string) {
-    const where = userRole === 'CARGO_OWNER'
-      ? { 
-          cargoOwnerId: userId,
-          status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP, ShipmentStatus.IN_TRANSIT] }
-        }
-      : {
-          transporterId: userId,
-          status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP, ShipmentStatus.IN_TRANSIT] }
-        };
+    let where: any = {
+      status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP, ShipmentStatus.IN_TRANSIT] }
+    };
+
+    if (userRole === 'ADMIN') {
+      // Admin sees all active shipments
+      where = { status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP, ShipmentStatus.IN_TRANSIT] } };
+    } else if (userRole === 'CARGO_OWNER') {
+      where.cargoOwnerId = userId;
+    } else if (userRole === 'TRANSPORTER') {
+      where.transporterId = userId;
+    }
 
     return this.prisma.shipment.findMany({
       where,
@@ -259,15 +275,16 @@ export class ShipmentsService {
   }
 
   async getCompletedShipments(userId: string, userRole: string) {
-    const where = userRole === 'CARGO_OWNER'
-      ? { 
-          cargoOwnerId: userId,
-          status: ShipmentStatus.DELIVERED
-        }
-      : {
-          transporterId: userId,
-          status: ShipmentStatus.DELIVERED
-        };
+    let where: any = { status: ShipmentStatus.DELIVERED };
+
+    if (userRole === 'ADMIN') {
+      // Admin sees all completed shipments
+      where = { status: ShipmentStatus.DELIVERED };
+    } else if (userRole === 'CARGO_OWNER') {
+      where.cargoOwnerId = userId;
+    } else if (userRole === 'TRANSPORTER') {
+      where.transporterId = userId;
+    }
 
     return this.prisma.shipment.findMany({
       where,
@@ -295,9 +312,16 @@ export class ShipmentsService {
   }
 
   async getShipmentStats(userId: string, userRole: string) {
-    const where = userRole === 'CARGO_OWNER'
-      ? { cargoOwnerId: userId }
-      : { transporterId: userId };
+    let where: any = {};
+
+    if (userRole === 'ADMIN') {
+      // Admin sees stats for ALL shipments
+      where = {};
+    } else if (userRole === 'CARGO_OWNER') {
+      where.cargoOwnerId = userId;
+    } else if (userRole === 'TRANSPORTER') {
+      where.transporterId = userId;
+    }
 
     const [active, inTransit, completed, totalValue] = await Promise.all([
       this.prisma.shipment.count({
