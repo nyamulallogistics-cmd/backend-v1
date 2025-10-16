@@ -96,7 +96,7 @@ async function main() {
       fromAddress: '789 Farm Supply Street, Kitwe',
       toLocation: 'Livingstone',
       toAddress: '321 Agricultural Zone, Livingstone',
-      status: ShipmentStatus.AWAITING_PICKUP,
+      status: ShipmentStatus.PENDING_PICKUP,
       amount: 2800,
       weight: 3500,
       distance: 850,

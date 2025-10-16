@@ -239,12 +239,12 @@ export class ShipmentsService {
 
   async getActiveShipments(userId: string, userRole: string) {
     let where: any = {
-      status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP, ShipmentStatus.IN_TRANSIT] }
+      status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.IN_TRANSIT] }
     };
 
     if (userRole === 'ADMIN') {
       // Admin sees all active shipments
-      where = { status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP, ShipmentStatus.IN_TRANSIT] } };
+      where = { status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.IN_TRANSIT] } };
     } else if (userRole === 'CARGO_OWNER') {
       where.cargoOwnerId = userId;
     } else if (userRole === 'TRANSPORTER') {
@@ -327,7 +327,7 @@ export class ShipmentsService {
       this.prisma.shipment.count({
         where: {
           ...where,
-          status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP, ShipmentStatus.IN_TRANSIT] },
+          status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.IN_TRANSIT] },
         },
       }),
       this.prisma.shipment.count({

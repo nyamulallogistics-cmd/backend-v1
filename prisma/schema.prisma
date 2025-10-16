@@ -148,7 +148,6 @@ enum Role {
 
 enum ShipmentStatus {
   PENDING_PICKUP
-  //AWAITING_PICKUP
   IN_TRANSIT
   DELIVERED
   CANCELLED

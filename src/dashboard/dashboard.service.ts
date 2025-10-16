@@ -15,14 +15,14 @@ export class DashboardService {
     const activeShipments = await this.prisma.shipment.count({
       where: {
         cargoOwnerId: userId,
-        status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP, ShipmentStatus.IN_TRANSIT] },
+        status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.IN_TRANSIT] },
       },
     });
 
     const awaitingPickup = await this.prisma.shipment.count({
       where: {
         cargoOwnerId: userId,
-        status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP] },
+        status: { in: [ShipmentStatus.PENDING_PICKUP] },
       },
     });
 
@@ -92,14 +92,14 @@ export class DashboardService {
     const activeDeliveries = await this.prisma.shipment.count({
       where: {
         transporterId: userId,
-        status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP, ShipmentStatus.IN_TRANSIT] },
+        status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.IN_TRANSIT] },
       },
     });
 
     const pendingPickup = await this.prisma.shipment.count({
       where: {
         transporterId: userId,
-        status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP] },
+        status: { in: [ShipmentStatus.PENDING_PICKUP] },
       },
     });
 
@@ -135,7 +135,7 @@ export class DashboardService {
     const pendingEarnings = await this.prisma.shipment.aggregate({
       where: {
         transporterId: userId,
-        status: { in: [ShipmentStatus.IN_TRANSIT, ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP] },
+        status: { in: [ShipmentStatus.IN_TRANSIT, ShipmentStatus.PENDING_PICKUP] },
       },
       _sum: {
         amount: true,
@@ -185,7 +185,7 @@ export class DashboardService {
     const activeShipments = await this.prisma.shipment.findMany({
       where: {
         cargoOwnerId: userId,
-        status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.AWAITING_PICKUP, ShipmentStatus.IN_TRANSIT] },
+        status: { in: [ShipmentStatus.PENDING_PICKUP, ShipmentStatus.IN_TRANSIT] },
       },
       include: {
         transporter: {
