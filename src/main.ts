@@ -3,44 +3,77 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
+  const app = await NestFactory.create(AppModule);
 
-  // Enable CORS with secure configuration
-  const corsOrigins = process.env.CORS_ORIGINS?.split(',') || [
+  // Define allowed CORS origins
+  const allowedOrigins = [
     'https://nyamula-logistics-landing.vercel.app',
     'https://www.nyamula.com',
+    'https://nyamula.com',
     'http://localhost:5173',
     'http://localhost:3000',
+    'http://localhost:3001',
     'http://localhost:8080',
   ];
 
-  // Log all incoming requests to debug CORS
-  app.use((req, res, next) => {
-    console.log(`📥 ${req.method} ${req.url} from ${req.headers.origin || 'no-origin'}`);
+  // Helper function to check if origin is allowed
+  const isAllowedOrigin = (origin?: string): boolean => {
+    if (!origin) return true; // Allow requests with no origin (Postman, mobile apps)
+    if (allowedOrigins.includes(origin)) return true;
     
-    // Set CORS headers on every response
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, Origin, X-Requested-With');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '3600');
+    // Allow any localhost in development
+    if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  // Enable CORS with dynamic origin validation
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        console.log(`❌ CORS blocked origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'), false);
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+    ],
+    exposedHeaders: ['Authorization'],
+    optionsSuccessStatus: 204,
+    preflightContinue: false,
+  });
+
+  // Explicit CORS headers middleware (helps with proxies like Railway)
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    
+    console.log(`📥 ${req.method} ${req.url} from ${origin || 'no-origin'}`);
+    
+    if (origin && isAllowedOrigin(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Vary', 'Origin');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+    }
     
     // Handle OPTIONS preflight
     if (req.method === 'OPTIONS') {
       console.log('✅ Responding to OPTIONS preflight');
-      return res.status(204).end();
+      return res.sendStatus(204);
     }
+    
     next();
-  });
-
-  app.enableCors({
-    origin: true, // Allow all origins temporarily for debugging
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-    exposedHeaders: ['Authorization'],
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
   });
 
   // Enable global validation pipe
@@ -63,6 +96,6 @@ async function bootstrap() {
     `🚀 Nyamula Logistics Backend running on http://localhost:${port}`,
   );
   console.log(`📝 Environment: ${environment}`);
-  console.log(`🔐 CORS enabled for: ${corsOrigins.join(', ')}`);
+  console.log(`🔐 CORS enabled for: ${allowedOrigins.join(', ')}`);
 }
 bootstrap();
