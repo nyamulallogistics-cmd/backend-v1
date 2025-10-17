@@ -16,37 +16,13 @@ async function bootstrap() {
   ];
 
   app.enableCors({
-    origin: (origin, callback) => {
-      console.log('🌍 CORS Request from origin:', origin);
-      console.log('✅ Allowed origins:', corsOrigins);
-      
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) {
-        console.log('✅ No origin - allowing request');
-        return callback(null, true);
-      }
-
-      // Check if origin is in whitelist
-      if (corsOrigins.includes(origin)) {
-        console.log('✅ Origin allowed:', origin);
-        callback(null, true);
-      } else {
-        // In development, allow any localhost
-        if (
-          process.env.NODE_ENV === 'development' &&
-          origin.includes('localhost')
-        ) {
-          console.log('✅ Localhost allowed in development:', origin);
-          callback(null, true);
-        } else {
-          console.log('❌ Origin blocked:', origin);
-          callback(new Error('Not allowed by CORS'));
-        }
-      }
-    },
+    origin: true, // Allow all origins temporarily for debugging
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    exposedHeaders: ['Authorization'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // Enable global validation pipe
