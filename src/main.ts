@@ -25,11 +25,12 @@ async function bootstrap() {
   // Set global prefix for all routes
   app.setGlobalPrefix('api');
 
-  const port = parseInt(process.env.PORT || '3000', 10);
+  const port = parseInt(process.env.PORT || '8080', 10);
   
   console.log('='.repeat(50));
   console.log('🔍 Starting server...');
   console.log(`Port from env: ${process.env.PORT || 'NOT SET'}`);
+  console.log(`Using port: ${port}`);
   console.log(`Binding to: 0.0.0.0:${port}`);
   console.log('='.repeat(50));
   
