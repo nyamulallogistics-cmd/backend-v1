@@ -5,75 +5,20 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Define allowed CORS origins
-  const allowedOrigins = [
-    'https://nyamula-logistics-landing.vercel.app',
-    'https://www.nyamula.com',
-    'https://nyamula.com',
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:8080',
-  ];
-
-  // Helper function to check if origin is allowed
-  const isAllowedOrigin = (origin?: string): boolean => {
-    if (!origin) return true; // Allow requests with no origin (Postman, mobile apps)
-    if (allowedOrigins.includes(origin)) return true;
-    
-    // Allow any localhost in development
-    if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
-      return true;
-    }
-    
-    return false;
-  };
-
-  // Enable CORS with dynamic origin validation
+  // Simple, clean CORS configuration
   app.enableCors({
-    origin: (origin, callback) => {
-      if (isAllowedOrigin(origin)) {
-        callback(null, true);
-      } else {
-        console.log(`❌ CORS blocked origin: ${origin}`);
-        callback(new Error('Not allowed by CORS'), false);
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'Accept',
-      'Origin',
-      'X-Requested-With',
+    origin: [
+      'https://www.nyamula.com',
+      'https://nyamula.com',
+      'https://nyamula-logistics-landing.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:8080',
     ],
-    exposedHeaders: ['Authorization'],
-    optionsSuccessStatus: 204,
-    preflightContinue: false,
-  });
-
-  // Explicit CORS headers middleware (helps with proxies like Railway)
-  app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    
-    console.log(`📥 ${req.method} ${req.url} from ${origin || 'no-origin'}`);
-    
-    if (origin && isAllowedOrigin(origin)) {
-      res.header('Access-Control-Allow-Origin', origin);
-      res.header('Vary', 'Origin');
-      res.header('Access-Control-Allow-Credentials', 'true');
-      res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-      res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-    }
-    
-    // Handle OPTIONS preflight
-    if (req.method === 'OPTIONS') {
-      console.log('✅ Responding to OPTIONS preflight');
-      return res.sendStatus(204);
-    }
-    
-    next();
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
   // Enable global validation pipe
@@ -88,43 +33,11 @@ async function bootstrap() {
   // Set global prefix for all routes
   app.setGlobalPrefix('api');
 
-  // Additional catch-all OPTIONS handler (in case Railway strips prefixes)
-  app.use((req, res, next) => {
-    if (req.method === 'OPTIONS') {
-      const origin = req.headers.origin;
-      if (origin && isAllowedOrigin(origin)) {
-        res.header('Access-Control-Allow-Origin', origin);
-        res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
-        res.header('Access-Control-Allow-Credentials', 'true');
-      }
-      console.log('🔄 Final OPTIONS catch-all triggered');
-      return res.sendStatus(204);
-    }
-    next();
-  });
-
   const port = parseInt(process.env.PORT || '3000', 10);
-  const environment = process.env.NODE_ENV || 'development';
+  await app.listen(port, '0.0.0.0');
   
-  console.log('='.repeat(60));
-  console.log('🔍 STARTUP DIAGNOSTICS:');
-  console.log(`   PORT env var: ${process.env.PORT || 'NOT SET'}`);
-  console.log(`   Using port: ${port}`);
-  console.log(`   NODE_ENV: ${environment}`);
-  console.log('='.repeat(60));
-
-  await app.listen(port, '0.0.0.0'); // Bind to all interfaces
-  
-  console.log('='.repeat(60));
-  console.log(`✅ SERVER SUCCESSFULLY STARTED`);
-  console.log(`🚀 Listening on: http://0.0.0.0:${port}`);
-  console.log(`📝 Environment: ${environment}`);
-  console.log(`🔐 CORS enabled for:`);
-  allowedOrigins.forEach(origin => console.log(`   - ${origin}`));
-  console.log(`🌐 Health check endpoint: GET /api`);
-  console.log(`📡 Ready to receive requests...`);
-  console.log('='.repeat(60));
+  console.log(`🚀 Backend running on port ${port}`);
+  console.log(`🔐 CORS enabled for production domains`);
 }
 
 bootstrap().catch((error) => {
