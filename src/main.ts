@@ -104,17 +104,31 @@ async function bootstrap() {
     next();
   });
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port, '0.0.0.0'); // Bind to 0.0.0.0 for Railway
-
+  const port = parseInt(process.env.PORT || '3000', 10);
   const environment = process.env.NODE_ENV || 'development';
+  
   console.log('='.repeat(60));
-  console.log(`🚀 Nyamula Logistics Backend running on http://0.0.0.0:${port}`);
+  console.log('🔍 STARTUP DIAGNOSTICS:');
+  console.log(`   PORT env var: ${process.env.PORT || 'NOT SET'}`);
+  console.log(`   Using port: ${port}`);
+  console.log(`   NODE_ENV: ${environment}`);
+  console.log('='.repeat(60));
+
+  await app.listen(port, '0.0.0.0'); // Bind to all interfaces
+  
+  console.log('='.repeat(60));
+  console.log(`✅ SERVER SUCCESSFULLY STARTED`);
+  console.log(`🚀 Listening on: http://0.0.0.0:${port}`);
   console.log(`📝 Environment: ${environment}`);
   console.log(`🔐 CORS enabled for:`);
   allowedOrigins.forEach(origin => console.log(`   - ${origin}`));
-  console.log(`🌐 Server binding: 0.0.0.0:${port}`);
-  console.log(`📡 Waiting for requests...`);
+  console.log(`🌐 Health check endpoint: GET /api`);
+  console.log(`📡 Ready to receive requests...`);
   console.log('='.repeat(60));
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  console.error('❌ FATAL ERROR - Application failed to start:');
+  console.error(error);
+  process.exit(1);
+});
