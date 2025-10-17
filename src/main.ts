@@ -26,10 +26,21 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   const port = parseInt(process.env.PORT || '3000', 10);
+  
+  console.log('='.repeat(50));
+  console.log('🔍 Starting server...');
+  console.log(`Port from env: ${process.env.PORT || 'NOT SET'}`);
+  console.log(`Binding to: 0.0.0.0:${port}`);
+  console.log('='.repeat(50));
+  
   await app.listen(port, '0.0.0.0');
   
-  console.log(`🚀 Backend running on port ${port}`);
-  console.log(`🔐 CORS enabled for production domains`);
+  console.log('='.repeat(50));
+  console.log(`✅ SERVER LISTENING ON PORT ${port}`);
+  console.log(`🌐 Access at: http://0.0.0.0:${port}/api`);
+  console.log(`🔐 CORS: Enabled for all origins (testing)`);
+  console.log(`📡 Health check: GET /api should return "Hello World!"`);
+  console.log('='.repeat(50));
 }
 
 bootstrap().catch((error) => {
