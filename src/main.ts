@@ -88,14 +88,33 @@ async function bootstrap() {
   // Set global prefix for all routes
   app.setGlobalPrefix('api');
 
+  // Additional catch-all OPTIONS handler (in case Railway strips prefixes)
+  app.use((req, res, next) => {
+    if (req.method === 'OPTIONS') {
+      const origin = req.headers.origin;
+      if (origin && isAllowedOrigin(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+        res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Origin, X-Requested-With');
+        res.header('Access-Control-Allow-Credentials', 'true');
+      }
+      console.log('🔄 Final OPTIONS catch-all triggered');
+      return res.sendStatus(204);
+    }
+    next();
+  });
+
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0'); // Bind to 0.0.0.0 for Railway
 
   const environment = process.env.NODE_ENV || 'development';
-  console.log(
-    `🚀 Nyamula Logistics Backend running on http://localhost:${port}`,
-  );
+  console.log('='.repeat(60));
+  console.log(`🚀 Nyamula Logistics Backend running on http://0.0.0.0:${port}`);
   console.log(`📝 Environment: ${environment}`);
-  console.log(`🔐 CORS enabled for: ${allowedOrigins.join(', ')}`);
+  console.log(`🔐 CORS enabled for:`);
+  allowedOrigins.forEach(origin => console.log(`   - ${origin}`));
+  console.log(`🌐 Server binding: 0.0.0.0:${port}`);
+  console.log(`📡 Waiting for requests...`);
+  console.log('='.repeat(60));
 }
 bootstrap();
