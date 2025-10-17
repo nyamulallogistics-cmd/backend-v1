@@ -3,7 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { cors: true });
 
   // Enable CORS with secure configuration
   const corsOrigins = process.env.CORS_ORIGINS?.split(',') || [
@@ -14,16 +14,21 @@ async function bootstrap() {
     'http://localhost:8080',
   ];
 
-  // Add raw middleware to handle OPTIONS requests before routing
+  // Log all incoming requests to debug CORS
   app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true');
+    console.log(`📥 ${req.method} ${req.url} from ${req.headers.origin || 'no-origin'}`);
     
+    // Set CORS headers on every response
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization, Origin, X-Requested-With');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '3600');
+    
+    // Handle OPTIONS preflight
     if (req.method === 'OPTIONS') {
-      console.log('🔄 OPTIONS request from:', req.headers.origin);
-      return res.status(204).send('');
+      console.log('✅ Responding to OPTIONS preflight');
+      return res.status(204).end();
     }
     next();
   });
