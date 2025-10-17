@@ -15,6 +15,20 @@ async function bootstrap() {
     'http://localhost:8080',
   ];
 
+  // Add raw middleware to handle OPTIONS requests before routing
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    
+    if (req.method === 'OPTIONS') {
+      console.log('🔄 OPTIONS request from:', req.headers.origin);
+      return res.status(204).send('');
+    }
+    next();
+  });
+
   app.enableCors({
     origin: true, // Allow all origins temporarily for debugging
     credentials: true,
